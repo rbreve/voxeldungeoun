@@ -1,5 +1,7 @@
 # Voxel Dungeon
 
+DEMO https://rbreve.github.io/voxeldungeoun/
+
 A first-person voxel shooter with procedurally generated, Binding of Isaac–style dungeon floors.
 Walk into a room and the doors slam shut. A random number and mix of monsters spawn in, and the
 doors only reopen once they're all dead. Find the boss room, kill the boss, take the portal down
