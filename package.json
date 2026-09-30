@@ -1,0 +1,10 @@
+{
+  "name": "voxel-dungeon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Procedural voxel dungeon FPS (Binding of Isaac-style rooms) built with Three.js",
+  "scripts": {
+    "start": "node serve.js"
+  }
+}

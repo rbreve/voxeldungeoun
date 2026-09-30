@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voxel Dungeon</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+    body { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: #fff; user-select: none; }
+    #game canvas { display: block; width: 100vw; height: 100vh; image-rendering: pixelated; }
+
+    #hud { position: fixed; inset: 0; pointer-events: none; }
+    #crosshair { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; transform: translate(-50%, -50%); background: #fff;
+      box-shadow: 0 0 0 1px #000, -9px 0 0 0 #fff, 9px 0 0 0 #fff, 0 -9px 0 0 #fff, 0 9px 0 0 #fff; }
+    #hitmarker { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; transform: translate(-50%, -50%) rotate(45deg); opacity: 0;
+      box-shadow: -12px 0 0 1px #ff5544, 12px 0 0 1px #ff5544, 0 -12px 0 1px #ff5544, 0 12px 0 1px #ff5544; }
+    #damage { position: absolute; inset: 0; opacity: 0; box-shadow: inset 0 0 140px 40px rgba(220,0,0,.85); }
+    #flash { position: absolute; inset: 0; opacity: 0; mix-blend-mode: screen; }
+
+    .panel { position: absolute; background: rgba(10,8,12,.62); border: 2px solid rgba(255,255,255,.12); padding: 10px 14px; }
+    #stats { left: 20px; bottom: 20px; width: 280px; }
+    .bar { position: relative; height: 20px; background: #1d1414; border: 2px solid #000; margin: 4px 0 8px; }
+    .bar > div { height: 100%; transition: width .15s; }
+    .bar > span { position: absolute; right: 6px; top: 0; font-size: 13px; line-height: 16px; font-weight: bold; text-shadow: 1px 1px 0 #000; }
+    .label { font-size: 11px; letter-spacing: 2px; color: #bbb; }
+    #hp-fill { background: #e8423c; }
+    #ar-fill { background: #3a8dff; }
+
+    #weaponinfo { right: 20px; bottom: 20px; min-width: 240px; text-align: right; }
+    #weapon-name { font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+    #ammo { font-size: 30px; font-weight: bold; color: #ffd24a; text-shadow: 2px 2px 0 #000; margin: 2px 0 6px; }
+    #toolbar { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+    .tslot { position: relative; width: 170px; height: 84px; background: rgba(10,8,12,.7); border: 3px solid rgba(255,255,255,.15);
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; transition: transform .1s, border-color .1s; }
+    .tslot img { width: 112px; height: 50px; object-fit: contain; image-rendering: auto; margin-bottom: 2px; }
+    .tslot .tname { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 162px; text-shadow: 1px 1px 0 #000; }
+    .tslot .key { position: absolute; top: 2px; left: 5px; font-size: 13px; font-weight: bold; color: #888; }
+    .tslot.active { border-color: #ffd24a; transform: translateY(-6px); background: rgba(40,30,10,.8); }
+    .tslot.active .key { color: #ffd24a; }
+    .tslot.noammo img { opacity: .35; }
+    #toolbar.compact .tslot { width: 84px; height: 62px; }
+    #toolbar.compact .tslot img { width: 72px; height: 32px; }
+    #toolbar.compact .tslot .tname { font-size: 9px; max-width: 78px; }
+    .tslot.emptyslot { justify-content: center; color: #555; font-size: 12px; }
+    #prompt { position: absolute; bottom: 124px; left: 50%; transform: translateX(-50%); font-size: 16px; font-weight: bold;
+      padding: 6px 14px; background: rgba(0,0,0,.65); border: 2px solid #ffd24a; display: none; white-space: nowrap; }
+    #prompt b { color: #ffd24a; }
+    .modes { display: flex; gap: 18px; margin-bottom: 26px; }
+    .modebtn { width: 260px; padding: 16px; border: 3px solid rgba(255,255,255,.2); background: rgba(0,0,0,.45); cursor: pointer; text-align: left; transition: transform .1s, border-color .1s; }
+    .modebtn:hover { border-color: #ffd24a; transform: translateY(-3px); }
+    .modebtn.default { border-color: rgba(255,210,74,.6); }
+    .modebtn h2 { margin: 0 0 6px; font-size: 22px; color: #ffcc66; letter-spacing: 2px; }
+    .modebtn p { margin: 0; font-size: 13px; color: #bbb; line-height: 1.35; }
+    .btnrow { display: flex; gap: 14px; }
+    .btn { padding: 10px 22px; border: 3px solid rgba(255,255,255,.25); font-weight: bold; letter-spacing: 2px; cursor: pointer; background: rgba(0,0,0,.4); }
+    .btn:hover { border-color: #ffd24a; }
+
+    #topbar { top: 16px; left: 20px; font-size: 14px; letter-spacing: 1px; }
+    #floor { font-size: 20px; font-weight: bold; color: #ffcc66; display: block; }
+    #gems { margin-top: 4px; font-size: 18px; font-weight: bold; color: #ff5a9a; text-shadow: 2px 2px 0 #000; transform-origin: left center; }
+    #roominfo { margin-top: 4px; color: #ff7766; display: none; }
+    #minimap { position: absolute; top: 16px; right: 16px; width: 200px; height: 200px; border: 2px solid rgba(255,255,255,.15); image-rendering: pixelated; }
+
+    #bossbar { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: min(560px, 50vw); display: none; text-align: center; }
+    #boss-name { font-weight: bold; letter-spacing: 3px; color: #ff5544; text-shadow: 2px 2px 0 #000; margin-bottom: 4px; }
+    #bossbar .bar { height: 16px; }
+    #boss-fill { background: linear-gradient(#ff4433, #aa1a11); }
+
+    #messages { position: absolute; top: 28%; left: 50%; transform: translateX(-50%); text-align: center; }
+    .msg { font-size: 18px; font-weight: bold; text-shadow: 2px 2px 0 #000; margin: 4px; transition: opacity .8s, transform .8s; }
+    .msg.big { font-size: 34px; letter-spacing: 4px; }
+    .msg.fade { opacity: 0; transform: translateY(-14px); }
+
+    #powers { position: absolute; left: 20px; bottom: 140px; display: flex; flex-direction: column; gap: 6px; }
+    .power { position: relative; width: 220px; padding: 5px 8px; font-size: 13px; font-weight: bold; border: 2px solid; background: rgba(0,0,0,.55); overflow: hidden; }
+    .power span { float: right; }
+    .power i { position: absolute; left: 0; bottom: 0; height: 3px; }
+
+    #overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at center, rgba(20,10,30,.72), rgba(0,0,0,.92)); cursor: pointer; text-align: center; }
+    #overlay h1 { font-size: 72px; line-height: .95; margin: 0 0 16px; letter-spacing: 8px; color: #ffcc66;
+      text-shadow: 4px 4px 0 #6a2a10, 8px 8px 0 #000; }
+    #overlay h1.red { color: #ff4433; text-shadow: 4px 4px 0 #400, 8px 8px 0 #000; }
+    #overlay .sub { color: #ccc; font-size: 16px; margin-bottom: 26px; }
+    .controls { display: grid; grid-template-columns: repeat(4, auto); gap: 8px 26px; font-size: 13px; color: #aaa; margin-bottom: 30px; }
+    .controls b { color: #fff; }
+    .blink { font-size: 20px; font-weight: bold; letter-spacing: 3px; animation: blink 1s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: .25; } }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="game"></div>
+  <div id="hud">
+    <div id="damage"></div>
+    <div id="flash"></div>
+    <div id="crosshair"></div>
+    <div id="hitmarker"></div>
+    <div id="topbar" class="panel">
+      <span id="floor">FLOOR 1</span>
+      <span id="score"></span>
+      <div id="gems">◆ 0</div>
+      <div id="roominfo"></div>
+    </div>
+    <div id="bossbar">
+      <div id="boss-name"></div>
+      <div class="bar"><div id="boss-fill"></div></div>
+    </div>
+    <canvas id="minimap" width="200" height="200"></canvas>
+    <div id="messages"></div>
+    <div id="powers"></div>
+    <div id="stats" class="panel">
+      <div class="label">HEALTH</div>
+      <div class="bar"><div id="hp-fill"></div><span id="hp-text"></span></div>
+      <div class="label">ARMOR</div>
+      <div class="bar"><div id="ar-fill"></div><span id="ar-text"></span></div>
+    </div>
+    <div id="weaponinfo" class="panel">
+      <div id="weapon-name"></div>
+      <div id="ammo"></div>
+    </div>
+    <div id="prompt"></div>
+    <div id="toolbar"></div>
+  </div>
+  <div id="overlay"></div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
