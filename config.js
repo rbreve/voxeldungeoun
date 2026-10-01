@@ -421,10 +421,17 @@ export const CONFIG = {
     alleyWakeRadius: 14,     // they wake when they see you this close (or get shot)
   },
 
-  // Per-floor scaling applied to monsters (floor 1 = x1.0).
+  // Monster multipliers per floor. `floors[0]` is floor 1. Damage also
+  // scales projectiles and explosions. Floors deeper than the list add
+  // healthPerFloor / damagePerFloor on top of the last entry, each floor.
   difficulty: {
-    healthPerFloor: 0.2,
-    damagePerFloor: 0.1,
+    floors: [
+      { health: 1.0, damage: 1.0 },   // floor 1
+      { health: 1.5, damage: 1.0 },   // floor 2: tougher
+      { health: 2.0, damage: 1.4 },   // floor 3: tougher and hits harder
+    ],
+    healthPerFloor: 0.5,
+    damagePerFloor: 0.2,
     speedPerFloor: 0.03,
   },
 

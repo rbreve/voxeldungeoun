@@ -25,9 +25,13 @@ export class Monster {
 
     const f = game.floor - 1;
     const D = game.cfg.difficulty;
-    this.maxHp = def.health * (1 + D.healthPerFloor * f);
+    const table = D.floors ?? [];
+    const last = Math.max(0, table.length - 1);
+    const row = table[Math.min(f, last)] ?? {};
+    const extra = Math.max(0, f - last);
+    this.maxHp = def.health * ((row.health ?? 1) + (D.healthPerFloor ?? 0) * extra);
     this.hp = this.maxHp;
-    this.dmgMul = 1 + D.damagePerFloor * f;
+    this.dmgMul = (row.damage ?? 1) + (D.damagePerFloor ?? 0) * extra;
     this.damage = def.damage * this.dmgMul;
     this.speed = def.speed * (1 + D.speedPerFloor * f);
 
