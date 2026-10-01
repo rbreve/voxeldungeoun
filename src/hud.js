@@ -1,4 +1,5 @@
 import { weaponIcon } from './icons.js';
+import { tileToGrid } from './dungeon.js';
 
 const $ = (id) => document.getElementById(id);
 const hex = (c) => '#' + (c ?? 0xffffff).toString(16).padStart(6, '0');
@@ -11,7 +12,7 @@ export class Hud {
       hpFill: $('hp-fill'), hpText: $('hp-text'),
       arFill: $('ar-fill'), arText: $('ar-text'),
       weapon: $('weapon-name'), ammo: $('ammo'), toolbar: $('toolbar'), prompt: $('prompt'),
-      floor: $('floor'), score: $('score'), gems: $('gems'),
+      floor: $('floor'), score: $('score'),
       boss: $('bossbar'), bossName: $('boss-name'), bossFill: $('boss-fill'),
       messages: $('messages'), powers: $('powers'),
       damage: $('damage'), flash: $('flash'), hit: $('hitmarker'),
@@ -23,16 +24,11 @@ export class Hud {
     this.dmgT = 0;
     this.flashT = 0;
     this.lastSlots = '';
-    this.gemT = 0;
   }
 
   // Context prompt shown for the current frame only (e.g. "Press E to swap").
   prompt(html) {
     this.promptHtml = html;
-  }
-
-  gemPop() {
-    this.gemT = 0.2;
   }
 
   message(text, color = '#fff', big = false) {
@@ -85,9 +81,6 @@ export class Hud {
 
     e.floor.textContent = `FLOOR ${g.floor}`;
     e.score.textContent = `SCORE ${g.score}  ·  KILLS ${g.kills}`;
-    e.gems.textContent = `◆ ${g.gems}`;
-    this.gemT = Math.max(0, this.gemT - dt);
-    e.gems.style.transform = `scale(${1 + this.gemT * 1.5})`;
     const cur = g.currentRoom;
     if (cur && cur.locked) {
       const alive = g.monsters.filter((m) => m.alive && m.room === cur).length;
@@ -201,9 +194,8 @@ export class Hud {
     // Player dot
     const lv = g.level;
     const p = g.player;
-    const C = g.cfg.dungeon.cellTiles;
-    const px = ox + (p.pos.x / lv.T / C) * cell;
-    const py = oy + (p.pos.z / lv.T / C) * cell;
+    const px = ox + tileToGrid(d.colEdges, p.pos.x / lv.T) * cell;
+    const py = oy + tileToGrid(d.rowEdges, p.pos.z / lv.T) * cell;
     ctx.fillStyle = '#39ff6a';
     ctx.beginPath();
     ctx.arc(px, py, Math.max(2.5, cell * 0.1), 0, Math.PI * 2);

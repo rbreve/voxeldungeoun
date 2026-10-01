@@ -110,7 +110,6 @@ class Game {
     this.floor = 1;
     this.score = 0;
     this.kills = 0;
-    this.gems = 0;
     if (this.player) this.player.dispose();
     this.player = new Player(this);
     this.buildFloor();
@@ -215,7 +214,7 @@ class Game {
       o.innerHTML = `<h1>PAUSED</h1><p class="sub">${this.mode.name ?? ''}</p>${controls}<p class="blink">CLICK TO RESUME</p>`;
     } else if (kind === 'dead') {
       o.innerHTML = `<h1 class="red">YOU DIED</h1>
-        <p class="sub">${this.mode.name ?? ''} &nbsp;·&nbsp; Floor ${this.floor} &nbsp;·&nbsp; ${this.kills} kills &nbsp;·&nbsp; ◆ ${this.gems} gems &nbsp;·&nbsp; ${this.score} points</p>
+        <p class="sub">${this.mode.name ?? ''} &nbsp;·&nbsp; Floor ${this.floor} &nbsp;·&nbsp; ${this.kills} kills &nbsp;·&nbsp; ${this.score} points</p>
         <div class="btnrow"><div class="btn" data-action="retry">TRY AGAIN</div><div class="btn" data-action="menu">CHANGE MODE</div></div>`;
     }
   }
@@ -485,8 +484,8 @@ class Game {
     return rand.weighted(entries);
   }
 
-  // Weighted random pickup (never gems); favours health when the player is hurt.
-  randomPickupKey(filter = (d) => d.type !== 'gem') {
+  // Weighted random pickup; favours health when the player is hurt.
+  randomPickupKey(filter = () => true) {
     const p = this.player;
     const hurt = 1 - p.hp / this.cfg.player.maxHealth;
     const noAmmo = this.mode.unlimitedAmmo;
@@ -494,10 +493,6 @@ class Game {
       .filter(([, d]) => (d.dropWeight ?? 0) > 0 && filter(d) && !(noAmmo && d.type === 'ammo'))
       .map(([k, d]) => [k, d.dropWeight * (d.type === 'health' ? 1 + hurt * 2 : 1)]);
     return rand.weighted(entries);
-  }
-
-  randomGemKey() {
-    return this.randomPickupKey((d) => d.type === 'gem');
   }
 
   // Weighted weapon drop, twice as likely to be something you don't own yet.
@@ -540,7 +535,6 @@ class Game {
       if (w) items.push({ key: 'weapon:' + w, rarity: this.rollRarity(luck + this.floorLuck()) });
     };
     for (let i = count(table.drops); i--; ) add(this.randomPickupKey());
-    for (let i = count(table.gems); i--; ) add(this.randomGemKey());
     for (let i = count(table.healthPacks); i--; ) add(this.randomPickupKey((d) => d.type === 'health'));
     for (let i = count(table.armor); i--; ) add(this.randomPickupKey((d) => d.type === 'armor'));
     for (let i = count(table.powerUps); i--; ) add(this.randomPickupKey((d) => d.type === 'power'));
@@ -599,8 +593,6 @@ class Game {
     const items = [];
     const dropChance = ((def.dropChance ?? 0) * (L.monsterDropScale ?? 1) + (L.monsterDropBonusPerFloor ?? 0) * (this.floor - 1)) * (L.amount ?? 1);
     if (rand.chance(dropChance)) items.push({ key: this.randomPickupKey() });
-    const gemRange = def.gems ?? L.monsterGems ?? [1, 1];
-    for (let i = rand.int(gemRange[0], gemRange[1]); i > 0; i--) items.push({ key: this.randomGemKey() });
     if (rand.chance(L.monsterWeaponChance ?? 0)) {
       const w = this.randomWeaponKey();
       if (w) items.push({ key: 'weapon:' + w, rarity: this.rollRarity(this.floorLuck()) });

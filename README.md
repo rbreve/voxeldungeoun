@@ -48,16 +48,15 @@ The toolbar at the bottom of the screen shows your weapons with their icons and 
 
 ## Loot
 
-- **Monsters** can drop pickups, gems and, rarely, weapons. Drop chances grow each floor.
+- **Monsters** can drop pickups and, rarely, weapons. Drop chances grow each floor.
 - **Cleared rooms** spray loot from their center and may spawn a **treasure chest**. Walk up to a
   chest and it bursts open.
-- **Treasure rooms** hold a weapon on a pedestal, a power-up and a chest.
-- **Bosses** explode into a loot fountain: gems, health, armor, ammo, power-ups and 2–3 weapons.
+- **The treasure room** sits right before the boss room. It holds a weapon on a pedestal, a
+  power-up and a chest.
+- **Bosses** explode into a loot fountain: health, armor, ammo, power-ups and 2–3 weapons.
 - **Weapon rarity** (Common / Rare / Epic / Legendary) boosts damage and fire rate. Dropped weapons
   show a colored light beam and a name label. Picking up a higher rarity of a weapon you already
   own upgrades it. Deeper floors, chests and bosses roll better rarities.
-- **Gems** (ruby → diamond) add to your gem count and score, and get pulled toward you when you
-  walk near them.
 
 ## Tuning: `config.js`
 
@@ -71,8 +70,8 @@ Everything gameplay-related is in **`config.js`**. Edit it and reload the page.
 | `ammo` | ammo types and their max carry |
 | `weapons` | damage, fire rate, pellets, spread, hitscan vs projectile, splash, pierce, bouncing grenades, minigun spin-up, knockback, ammo use |
 | `monsters` | health, speed, damage, attack type (melee / ranged / explode), projectiles, spawn weight, first floor, drops, splitting, boss specials and summons |
-| `pickups` | health packs, armor, ammo boxes, gems, power packs (quad damage, haste, rapid fire, invulnerability, regen) |
-| `loot` | monster drop and gem chances, room-clear loot, chest chance and contents, boss loot explosion, per-floor growth |
+| `pickups` | health packs, armor, ammo boxes, power packs (quad damage, haste, rapid fire, invulnerability, regen) |
+| `loot` | monster drop chances, room-clear loot, chest chance and contents, boss loot explosion, per-floor growth |
 | `rarities` | weapon rarity tiers: weight, damage and fire-rate multipliers, beam color |
 | `dungeon` | room count per floor, room sizes, alley width and bends, loops, pillars, treasure rooms |
 | `rooms` | monsters per room (min/max + growth per floor), spawn delay, boss minions |

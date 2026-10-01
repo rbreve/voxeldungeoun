@@ -211,7 +211,6 @@ export const CONFIG = {
   //  spawnWeight:       relative chance to appear in normal rooms (0 = never)
   //  minFloor:          first floor this monster can appear on
   //  dropChance:        chance to drop a random pickup on death
-  //  gems:              [min, max] gems dropped on death (default: loot.monsterGems)
   //  boss:              only appears in boss rooms
   //  special:           boss ring attack { count, cooldown, projectile }
   //  summon:            boss summons { monster, count, cooldown }
@@ -253,14 +252,14 @@ export const CONFIG = {
       health: 70, speed: 2.6, damage: 12,
       attack: 'melee', attackRange: 1.6, attackCooldown: 1.0,
       splitInto: 'slimelet', splitCount: 3,
-      spawnWeight: 5, minFloor: 2, score: 15, dropChance: 0.1, gems: [1, 2],
+      spawnWeight: 5, minFloor: 2, score: 15, dropChance: 0.1,
     },
     slimelet: {
       name: 'Slimelet', model: 'slime', scale: 0.6,
       colors: { body: 0x66ee77, eyes: 0x113311 },
       health: 15, speed: 4.2, damage: 5,
       attack: 'melee', attackRange: 1.1, attackCooldown: 0.8,
-      spawnWeight: 0, minFloor: 1, score: 4, dropChance: 0.03, gems: [1, 1],
+      spawnWeight: 0, minFloor: 1, score: 4, dropChance: 0.03,
     },
     tick: {
       name: 'Tick', model: 'spider', scale: 0.8,
@@ -275,7 +274,7 @@ export const CONFIG = {
       colors: { body: 0x6a5a4a, head: 0x9a8a6a, limbs: 0x4a3a2a, eyes: 0xff6600 },
       health: 230, speed: 2.5, damage: 28,
       attack: 'melee', attackRange: 2.3, attackCooldown: 1.3,
-      spawnWeight: 3, minFloor: 2, score: 40, dropChance: 0.5, gems: [2, 3],
+      spawnWeight: 3, minFloor: 2, score: 40, dropChance: 0.5,
     },
     warlock: {
       name: 'Warlock', model: 'humanoid', scale: 1.1,
@@ -283,7 +282,7 @@ export const CONFIG = {
       health: 70, speed: 2.8, damage: 9,
       attack: 'ranged', attackRange: 26, attackCooldown: 2.2, preferredDistance: 11,
       projectile: { speed: 11, damage: 9, size: 0.25, color: 0x66ffff, count: 3, spreadDeg: 14 },
-      spawnWeight: 4, minFloor: 3, score: 30, dropChance: 0.35, gems: [1, 2],
+      spawnWeight: 4, minFloor: 3, score: 30, dropChance: 0.35,
     },
 
     // ----- BOSSES -----
@@ -311,10 +310,8 @@ export const CONFIG = {
 
   // -------------------------------------------------------------------
   //  PICKUPS
-  //  type:  'health' | 'armor' | 'ammo' | 'power' | 'gem'
+  //  type:  'health' | 'armor' | 'ammo' | 'power'
   //  model: 'cross' | 'shield' | 'box' | 'orb' | 'gem'
-  //  gems:  `value` is added to your gem count and score. Gems are chosen
-  //         with their own dropWeight whenever the loot tables ask for a gem.
   //  power effects: 'damage' (multiplier), 'speed' (multiplier),
   //                 'fireRate' (multiplier), 'invulnerable', 'regen' (amount/sec)
   //  dropWeight: relative chance when a random pickup drops (0 = never random)
@@ -328,12 +325,6 @@ export const CONFIG = {
     ammo_rockets: { name: 'Rockets',    type: 'ammo', ammoType: 'rockets', amount: 4,  model: 'box', color: 0x668833, scale: 0.9, dropWeight: 3 },
     ammo_cells:   { name: 'Cells',      type: 'ammo', ammoType: 'cells',   amount: 40, model: 'box', color: 0x33ccff, scale: 0.8, dropWeight: 4 },
     ammo_grenades:{ name: 'Grenades',   type: 'ammo', ammoType: 'grenades',amount: 5,  model: 'box', color: 0x66aa33, scale: 0.85, dropWeight: 4 },
-
-    gem_ruby:     { name: 'Ruby',     type: 'gem', value: 10,  model: 'gem', color: 0xff2244, scale: 0.55, dropWeight: 10 },
-    gem_emerald:  { name: 'Emerald',  type: 'gem', value: 25,  model: 'gem', color: 0x22ff66, scale: 0.6,  dropWeight: 5 },
-    gem_sapphire: { name: 'Sapphire', type: 'gem', value: 50,  model: 'gem', color: 0x3377ff, scale: 0.65, dropWeight: 2.5 },
-    gem_amethyst: { name: 'Amethyst', type: 'gem', value: 100, model: 'gem', color: 0xbb44ff, scale: 0.7,  dropWeight: 1 },
-    gem_diamond:  { name: 'Diamond',  type: 'gem', value: 250, model: 'gem', color: 0xeeffff, scale: 0.8,  dropWeight: 0.3 },
 
     power_damage: { name: 'QUAD DAMAGE',     type: 'power', effect: 'damage',   multiplier: 3,   duration: 12, model: 'orb', color: 0xaa44ff, dropWeight: 1 },
     power_speed:  { name: 'HASTE',           type: 'power', effect: 'speed',    multiplier: 1.6, duration: 15, model: 'orb', color: 0xffee33, dropWeight: 1 },
@@ -349,22 +340,20 @@ export const CONFIG = {
   // -------------------------------------------------------------------
   loot: {
     amount: 1.0,                   // master multiplier for all loot counts & drop chances (0.5 = half)
-    countPerFloor: 0.1,
+    countPerFloor: 0.05,
     // Every monster: its own dropChance + this bonus per floor
     monsterDropBonusPerFloor: 0.01,
-    monsterDropScale: 0.5,         // multiplies every monster's own dropChance
-    monsterGems: [1, 1],           // gems dropped by EVERY kill (a monster can override with `gems: [min, max]`)
+    monsterDropScale: 0.3,         // multiplies every monster's own dropChance
     monsterWeaponChance: 0,        // chance any kill drops a weapon (weapons come from room clears)
-    // Cleared rooms spray loot from the room center. `weapons: [1, 1]` = always one weapon.
-    roomClear: { drops: [0, 1], gems: [0, 2], weapons: [1, 1] },
-    chestChance: 0.15,             // chance a cleared normal room spawns a chest
-    chest: { drops: [1, 3], gems: [2, 4], weapons: [0, 1], powerUps: [0, 1], luck: 0.5 },
+    // Cleared rooms spray loot from the room center. `weaponChance` = chance of one weapon.
+    roomClear: { drops: [0, 1], weaponChance: 0.25 },
+    chestChance: 0.1,              // chance a cleared normal room spawns a chest
+    chest: { drops: [1, 2], weapons: [0, 1], powerUps: [0, 1], luck: 0.5 },
     treasureRoomChest: true,       // treasure rooms also get a chest
     // Diablo-style loot explosion when a boss dies (a monster can override
     // this with its own `loot: {...}` entry).
-    boss: { drops: [3, 5], gems: [8, 12], weapons: [1, 2], healthPacks: [1, 2], powerUps: [1, 1], armor: [0, 1], luck: 2 },
+    boss: { drops: [2, 3], weapons: [1, 1], healthPacks: [1, 1], powerUps: [1, 1], armor: [0, 1], luck: 2 },
     burstDuration: 1.2,            // seconds for a big loot fountain to finish
-    gemMagnetRadius: 3.5,          // gems fly to you inside this distance
   },
 
   // Weapon drops roll a rarity. Higher tiers deal more damage and fire faster.
@@ -385,7 +374,7 @@ export const CONFIG = {
     tileSize: 2,             // world units per tile
     wallHeight: 5,
     gridSize: 9,             // rooms are laid out on a gridSize x gridSize map
-    cellTiles: 30,           // tiles per grid cell (room + alley space); keep >= biggest room + 5
+    alleyTiles: [4, 8],      // alley length between neighbouring rooms (in tiles)
     baseRoomCount: 7,        // rooms on floor 1
     roomsPerFloor: 2,        // extra rooms each floor
     maxRoomCount: 20,
@@ -396,6 +385,7 @@ export const CONFIG = {
     treasureRoomTiles: 12,
     corridorWidth: 2,        // alley width in tiles
     bendChance: 0.65,        // chance an alley zig-zags instead of going straight
+    maxBendTiles: 4,         // how far a zig-zag steps sideways (when the rooms line up)
     loopChance: 0.15,        // chance to add extra connections (loops)
     pillarChance: 0.55,      // chance a normal room gets pillars
     maxPillars: 10,
@@ -413,18 +403,25 @@ export const CONFIG = {
     spawnDelay: 0.9,         // seconds monsters take to materialize
     minSpawnDistance: 6,     // from player, in world units
     bossMinions: 2,          // extra regular monsters in boss rooms
-    healthPackChance: 1,     // chance a normal room already has health packs lying around
-    healthPacksPerRoom: [1, 2],
+    healthPackChance: 0.5,   // chance a normal room already has health packs lying around
+    healthPacksPerRoom: [1, 1],
     treasurePowerUp: true,   // treasure rooms also contain a random power-up
     alleyMonsters: [2, 4],   // monsters lurking in the alleys on floor 1
     alleyMonstersPerFloor: 1,// added to min & max each floor
     alleyWakeRadius: 14,     // they wake when they see you this close (or get shot)
   },
 
-  // Per-floor scaling applied to monsters (floor 1 = x1.0).
+  // Monster multipliers per floor. `floors[0]` is floor 1. Damage also
+  // scales projectiles and explosions. Floors deeper than the list add
+  // healthPerFloor / damagePerFloor on top of the last entry, each floor.
   difficulty: {
-    healthPerFloor: 0.2,
-    damagePerFloor: 0.1,
+    floors: [
+      { health: 1.0, damage: 1.0 },   // floor 1
+      { health: 1.5, damage: 1.0 },   // floor 2: tougher
+      { health: 2.0, damage: 1.4 },   // floor 3: tougher and hits harder
+    ],
+    healthPerFloor: 0.5,
+    damagePerFloor: 0.2,
     speedPerFloor: 0.03,
   },
 

@@ -2,7 +2,8 @@
 //
 // Step 1: grow a graph of rooms on a coarse grid (Binding of Isaac style).
 // Step 2: pick special rooms (start, boss = farthest dead end, treasure).
-// Step 3: rasterize rooms + zig-zag alleys into a tile map.
+// Step 3: pack the grid tight so rooms sit a short alley apart.
+// Step 4: rasterize rooms + zig-zag alleys into a tile map.
 //
 // Tile values: 0 = solid rock, 1 = floor, 2 = pillar (solid).
 
@@ -20,7 +21,6 @@ export const TILE_PILLAR = 2;
 export function generateDungeon(cfg, floor, rng) {
   const D = cfg.dungeon;
   const G = D.gridSize;
-  const C = D.cellTiles;
   const target = Math.min(D.maxRoomCount, D.baseRoomCount + (floor - 1) * D.roomsPerFloor);
 
   // ---------- 1. room graph ----------
@@ -46,7 +46,8 @@ export function generateDungeon(cfg, floor, rng) {
 
   const mid = Math.floor(G / 2);
   addRoom(mid, mid);
-  for (let attempts = 0; rooms.length < target && attempts < 8000; attempts++) {
+  // One room short: the boss room is attached below, behind a treasure room.
+  for (let attempts = 0; rooms.length < target - 1 && attempts < 8000; attempts++) {
     const base = rng.pick(rooms);
     const d = rng.pick(DIRS);
     const nx = base.gx + d.dx, ny = base.gy + d.dy;
@@ -60,13 +61,36 @@ export function generateDungeon(cfg, floor, rng) {
   const start = rooms[0];
   start.type = 'start';
   const dist = bfsDistances(rooms, start.id);
-  const deadEnds = rooms.filter((r) => r !== start && r.links.length === 1);
   const byDist = (a, b) => dist[b.id] - dist[a.id];
-  const boss = (deadEnds.length ? [...deadEnds] : rooms.filter((r) => r !== start)).sort(byDist)[0];
+  const deadEnds = rooms.filter((r) => r !== start && r.links.length === 1).sort(byDist);
+
+  // The boss room hangs off the far end of the map, through a treasure room,
+  // so the player grabs its weapon + power-up right before the fight.
+  const freeCell = (r) => {
+    const cells = DIRS.map((d) => [r.gx + d.dx, r.gy + d.dy])
+      .filter(([x, y]) => x >= 0 && y >= 0 && x < G && y < G && !occupied(x, y));
+    return cells.find(([x, y]) => neighborCount(x, y) === 1) ?? cells[0];
+  };
+  const others = rooms.filter((r) => r !== start).sort(byDist);
+  const pre = [...deadEnds, ...others, start].find((r) => freeCell(r));
+  let boss = null, treasures = 0;
+  if (pre) {
+    const [bx, by] = freeCell(pre);
+    boss = addRoom(bx, by);
+    link(pre, boss);
+    if (pre !== start && D.treasureRooms > 0) {
+      pre.type = 'treasure';
+      treasures++;
+    }
+  } else {
+    boss = deadEnds[0] ?? others[0];
+  }
   if (boss) boss.type = 'boss';
-  const treasureCandidates = rng.shuffle(deadEnds.filter((r) => r !== boss));
+
+  // Any extra treasure rooms go in other dead ends.
+  const treasureCandidates = rng.shuffle(deadEnds.filter((r) => r.type === 'normal'));
   const fallback = rng.shuffle(rooms.filter((r) => r.type === 'normal'));
-  for (let i = 0; i < D.treasureRooms; i++) {
+  for (let i = treasures; i < D.treasureRooms; i++) {
     const r = treasureCandidates.shift() || fallback.find((f) => f.type === 'normal');
     if (r) r.type = 'treasure';
   }
@@ -83,27 +107,49 @@ export function generateDungeon(cfg, floor, rng) {
     }
   }
 
-  // ---------- 3. rasterize ----------
-  const W = G * C;
-  const tiles = new Uint8Array(W * W);
-  const roomAt = new Int16Array(W * W).fill(-1);
-  const setTile = (x, y, v) => { tiles[y * W + x] = v; };
-
+  // ---------- 3. lay out ----------
+  // Each grid column is as wide as its widest room and each row as tall as
+  // its tallest room, with a short alley gap between neighbours.
   for (const r of rooms) {
     let size;
     if (r.type === 'boss') size = [D.bossRoomTiles, D.bossRoomTiles];
     else if (r.type === 'start') size = [D.startRoomTiles ?? 12, D.startRoomTiles ?? 12];
     else if (r.type === 'treasure') size = [D.treasureRoomTiles ?? 12, D.treasureRoomTiles ?? 12];
     else size = [rng.int(D.roomMinTiles, D.roomMaxTiles), rng.int(D.roomMinTiles, D.roomMaxTiles)];
-    const [w, h] = size.map((s) => Math.min(s, C - 4));
-    const jx = Math.max(0, Math.floor((C - w) / 2) - 2);
-    const jy = Math.max(0, Math.floor((C - h) / 2) - 2);
-    r.x = r.gx * C + Math.floor((C - w) / 2) + rng.int(-jx, jx);
-    r.y = r.gy * C + Math.floor((C - h) / 2) + rng.int(-jy, jy);
-    r.w = w;
-    r.h = h;
-    for (let y = r.y; y < r.y + h; y++) {
-      for (let x = r.x; x < r.x + w; x++) {
+    [r.w, r.h] = size;
+  }
+  const colW = new Array(G).fill(0), rowH = new Array(G).fill(0);
+  for (const r of rooms) {
+    colW[r.gx] = Math.max(colW[r.gx], r.w);
+    rowH[r.gy] = Math.max(rowH[r.gy], r.h);
+  }
+  const [gapMin, gapMax] = D.alleyTiles ?? [4, 8];
+  const cols = layoutAxis(colW, gapMin, gapMax, rng);
+  const rows = layoutAxis(rowH, gapMin, gapMax, rng);
+  const W = Math.max(cols.length, rows.length);
+
+  // Slide each room toward the side it links to, so its alleys stay short.
+  const place = (cellStart, cellSize, size, toLow, toHigh) => {
+    const slack = cellSize - size;
+    if (toHigh && !toLow) return cellStart + slack;
+    if (toLow && !toHigh) return cellStart;
+    if (toLow && toHigh) return cellStart + Math.floor(slack / 2);
+    return cellStart + rng.int(0, slack);
+  };
+  for (const r of rooms) {
+    const near = (dx, dy) => r.links.some((id) => rooms[id].gx === r.gx + dx && rooms[id].gy === r.gy + dy);
+    r.x = place(cols.start[r.gx], colW[r.gx], r.w, near(-1, 0), near(1, 0));
+    r.y = place(rows.start[r.gy], rowH[r.gy], r.h, near(0, -1), near(0, 1));
+  }
+
+  // ---------- 4. rasterize ----------
+  const tiles = new Uint8Array(W * W);
+  const roomAt = new Int16Array(W * W).fill(-1);
+  const setTile = (x, y, v) => { tiles[y * W + x] = v; };
+
+  for (const r of rooms) {
+    for (let y = r.y; y < r.y + r.h; y++) {
+      for (let x = r.x; x < r.x + r.w; x++) {
         setTile(x, y, TILE_FLOOR);
         roomAt[y * W + x] = r.id;
       }
@@ -139,7 +185,52 @@ export function generateDungeon(cfg, floor, rng) {
     }
   }
 
-  return { rooms, tiles, roomAt, width: W, gridSize: G, startRoom: start, bossRoom: boss, floor };
+  return {
+    rooms, tiles, roomAt, width: W, gridSize: G, startRoom: start, bossRoom: boss, floor,
+    colEdges: cellEdges(cols, colW, W), rowEdges: cellEdges(rows, rowH, W),
+  };
+}
+
+// Place the columns (or rows) of the grid along one axis. Empty ones take
+// no space. Returns where each one starts and the total length in tiles.
+function layoutAxis(sizes, gapMin, gapMax, rng) {
+  const EDGE = 3; // solid rock around the whole map
+  const start = new Array(sizes.length).fill(0);
+  let at = EDGE, first = true;
+  for (let i = 0; i < sizes.length; i++) {
+    if (!sizes[i]) continue;
+    if (!first) at += rng.int(gapMin, gapMax);
+    start[i] = at;
+    at += sizes[i];
+    first = false;
+  }
+  return { start, length: at + EDGE };
+}
+
+// Grid cell edges in tiles: each cell owns half the alley on either side.
+function cellEdges(axis, sizes, W) {
+  const n = sizes.length;
+  const lo = [], hi = [];
+  let seen = false;
+  for (let i = 0; i < n; i++) {
+    if (sizes[i]) seen = true;
+    lo[i] = sizes[i] ? axis.start[i] : seen ? W : 0;
+    hi[i] = sizes[i] ? axis.start[i] + sizes[i] : lo[i];
+  }
+  const edges = [0];
+  for (let i = 1; i < n; i++) edges.push((hi[i - 1] + lo[i]) / 2);
+  edges.push(W);
+  return edges;
+}
+
+// Tile coordinate -> fractional grid coordinate, for the minimap.
+export function tileToGrid(edges, t) {
+  for (let i = 0; i < edges.length - 1; i++) {
+    if (t < edges[i + 1] || i === edges.length - 2) {
+      return i + (t - edges[i]) / Math.max(1e-6, edges[i + 1] - edges[i]);
+    }
+  }
+  return 0;
 }
 
 function canPlacePillar(x, y, r, tiles, W) {
@@ -196,8 +287,12 @@ function carveAlley(a, b, D, rng, tiles, W) {
   if (oMin <= oMax && !(canBend && rng.chance(D.bendChance))) {
     va = vb = rng.int(oMin, oMax);
   } else {
+    // Zig-zag, but keep the sideways step short when the rooms allow it.
+    const bend = D.maxBendTiles ?? Infinity;
+    const near = (v, lo, hi) => rng.int(Math.max(lo, Math.min(hi, v - bend)), Math.min(hi, Math.max(lo, v + bend)));
     va = rng.int(aMin, aMax);
-    vb = rng.int(bMin, bMax);
+    vb = near(va, bMin, bMax);
+    va = near(vb, aMin, aMax);
   }
 
   if (va === vb) {
