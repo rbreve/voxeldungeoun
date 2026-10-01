@@ -51,7 +51,8 @@ The toolbar at the bottom of the screen shows your weapons with their icons and 
 - **Monsters** can drop pickups and, rarely, weapons. Drop chances grow each floor.
 - **Cleared rooms** spray loot from their center and may spawn a **treasure chest**. Walk up to a
   chest and it bursts open.
-- **Treasure rooms** hold a weapon on a pedestal, a power-up and a chest.
+- **The treasure room** sits right before the boss room. It holds a weapon on a pedestal, a
+  power-up and a chest.
 - **Bosses** explode into a loot fountain: health, armor, ammo, power-ups and 2–3 weapons.
 - **Weapon rarity** (Common / Rare / Epic / Legendary) boosts damage and fire rate. Dropped weapons
   show a colored light beam and a name label. Picking up a higher rarity of a weapon you already

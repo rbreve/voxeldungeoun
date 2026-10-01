@@ -46,7 +46,8 @@ export function generateDungeon(cfg, floor, rng) {
 
   const mid = Math.floor(G / 2);
   addRoom(mid, mid);
-  for (let attempts = 0; rooms.length < target && attempts < 8000; attempts++) {
+  // One room short: the boss room is attached below, behind a treasure room.
+  for (let attempts = 0; rooms.length < target - 1 && attempts < 8000; attempts++) {
     const base = rng.pick(rooms);
     const d = rng.pick(DIRS);
     const nx = base.gx + d.dx, ny = base.gy + d.dy;
@@ -60,13 +61,36 @@ export function generateDungeon(cfg, floor, rng) {
   const start = rooms[0];
   start.type = 'start';
   const dist = bfsDistances(rooms, start.id);
-  const deadEnds = rooms.filter((r) => r !== start && r.links.length === 1);
   const byDist = (a, b) => dist[b.id] - dist[a.id];
-  const boss = (deadEnds.length ? [...deadEnds] : rooms.filter((r) => r !== start)).sort(byDist)[0];
+  const deadEnds = rooms.filter((r) => r !== start && r.links.length === 1).sort(byDist);
+
+  // The boss room hangs off the far end of the map, through a treasure room,
+  // so the player grabs its weapon + power-up right before the fight.
+  const freeCell = (r) => {
+    const cells = DIRS.map((d) => [r.gx + d.dx, r.gy + d.dy])
+      .filter(([x, y]) => x >= 0 && y >= 0 && x < G && y < G && !occupied(x, y));
+    return cells.find(([x, y]) => neighborCount(x, y) === 1) ?? cells[0];
+  };
+  const others = rooms.filter((r) => r !== start).sort(byDist);
+  const pre = [...deadEnds, ...others, start].find((r) => freeCell(r));
+  let boss = null, treasures = 0;
+  if (pre) {
+    const [bx, by] = freeCell(pre);
+    boss = addRoom(bx, by);
+    link(pre, boss);
+    if (pre !== start && D.treasureRooms > 0) {
+      pre.type = 'treasure';
+      treasures++;
+    }
+  } else {
+    boss = deadEnds[0] ?? others[0];
+  }
   if (boss) boss.type = 'boss';
-  const treasureCandidates = rng.shuffle(deadEnds.filter((r) => r !== boss));
+
+  // Any extra treasure rooms go in other dead ends.
+  const treasureCandidates = rng.shuffle(deadEnds.filter((r) => r.type === 'normal'));
   const fallback = rng.shuffle(rooms.filter((r) => r.type === 'normal'));
-  for (let i = 0; i < D.treasureRooms; i++) {
+  for (let i = treasures; i < D.treasureRooms; i++) {
     const r = treasureCandidates.shift() || fallback.find((f) => f.type === 'normal');
     if (r) r.type = 'treasure';
   }
