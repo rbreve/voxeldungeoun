@@ -1,4 +1,5 @@
 import { weaponIcon } from './icons.js';
+import { tileToGrid } from './dungeon.js';
 
 const $ = (id) => document.getElementById(id);
 const hex = (c) => '#' + (c ?? 0xffffff).toString(16).padStart(6, '0');
@@ -201,9 +202,8 @@ export class Hud {
     // Player dot
     const lv = g.level;
     const p = g.player;
-    const C = g.cfg.dungeon.cellTiles;
-    const px = ox + (p.pos.x / lv.T / C) * cell;
-    const py = oy + (p.pos.z / lv.T / C) * cell;
+    const px = ox + tileToGrid(d.colEdges, p.pos.x / lv.T) * cell;
+    const py = oy + tileToGrid(d.rowEdges, p.pos.z / lv.T) * cell;
     ctx.fillStyle = '#39ff6a';
     ctx.beginPath();
     ctx.arc(px, py, Math.max(2.5, cell * 0.1), 0, Math.PI * 2);

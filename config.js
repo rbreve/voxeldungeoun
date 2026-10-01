@@ -385,7 +385,7 @@ export const CONFIG = {
     tileSize: 2,             // world units per tile
     wallHeight: 5,
     gridSize: 9,             // rooms are laid out on a gridSize x gridSize map
-    cellTiles: 30,           // tiles per grid cell (room + alley space); keep >= biggest room + 5
+    alleyTiles: [4, 8],      // alley length between neighbouring rooms (in tiles)
     baseRoomCount: 7,        // rooms on floor 1
     roomsPerFloor: 2,        // extra rooms each floor
     maxRoomCount: 20,
@@ -396,6 +396,7 @@ export const CONFIG = {
     treasureRoomTiles: 12,
     corridorWidth: 2,        // alley width in tiles
     bendChance: 0.65,        // chance an alley zig-zags instead of going straight
+    maxBendTiles: 4,         // how far a zig-zag steps sideways (when the rooms line up)
     loopChance: 0.15,        // chance to add extra connections (loops)
     pillarChance: 0.55,      // chance a normal room gets pillars
     maxPillars: 10,
