@@ -340,19 +340,19 @@ export const CONFIG = {
   // -------------------------------------------------------------------
   loot: {
     amount: 1.0,                   // master multiplier for all loot counts & drop chances (0.5 = half)
-    countPerFloor: 0.1,
+    countPerFloor: 0.05,
     // Every monster: its own dropChance + this bonus per floor
     monsterDropBonusPerFloor: 0.01,
-    monsterDropScale: 0.5,         // multiplies every monster's own dropChance
+    monsterDropScale: 0.3,         // multiplies every monster's own dropChance
     monsterWeaponChance: 0,        // chance any kill drops a weapon (weapons come from room clears)
-    // Cleared rooms spray loot from the room center. `weapons: [1, 1]` = always one weapon.
-    roomClear: { drops: [0, 1], weapons: [1, 1] },
-    chestChance: 0.15,             // chance a cleared normal room spawns a chest
-    chest: { drops: [1, 3], weapons: [0, 1], powerUps: [0, 1], luck: 0.5 },
+    // Cleared rooms spray loot from the room center. `weaponChance` = chance of one weapon.
+    roomClear: { drops: [0, 1], weaponChance: 0.25 },
+    chestChance: 0.1,              // chance a cleared normal room spawns a chest
+    chest: { drops: [1, 2], weapons: [0, 1], powerUps: [0, 1], luck: 0.5 },
     treasureRoomChest: true,       // treasure rooms also get a chest
     // Diablo-style loot explosion when a boss dies (a monster can override
     // this with its own `loot: {...}` entry).
-    boss: { drops: [3, 5], weapons: [1, 2], healthPacks: [1, 2], powerUps: [1, 1], armor: [0, 1], luck: 2 },
+    boss: { drops: [2, 3], weapons: [1, 1], healthPacks: [1, 1], powerUps: [1, 1], armor: [0, 1], luck: 2 },
     burstDuration: 1.2,            // seconds for a big loot fountain to finish
   },
 
@@ -403,8 +403,8 @@ export const CONFIG = {
     spawnDelay: 0.9,         // seconds monsters take to materialize
     minSpawnDistance: 6,     // from player, in world units
     bossMinions: 2,          // extra regular monsters in boss rooms
-    healthPackChance: 1,     // chance a normal room already has health packs lying around
-    healthPacksPerRoom: [1, 2],
+    healthPackChance: 0.5,   // chance a normal room already has health packs lying around
+    healthPacksPerRoom: [1, 1],
     treasurePowerUp: true,   // treasure rooms also contain a random power-up
     alleyMonsters: [2, 4],   // monsters lurking in the alleys on floor 1
     alleyMonstersPerFloor: 1,// added to min & max each floor
