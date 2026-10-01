@@ -83,7 +83,6 @@ export class Sfx {
       case 'supershotgun': this.noise(0.5, 1.0 * v, 2500, 80); this.tone('sawtooth', 120, 30, 0.35, 0.4 * v); break;
       case 'grenade': this.tone('sine', 180, 60, 0.18, 0.5 * v); this.noise(0.12, 0.3 * v, 1500, 300); break;
       case 'bounce':  this.tone('square', 260, 180, 0.04, 0.12 * v); break;
-      case 'gem':     this.tone('triangle', 1400 + Math.random() * 500, 2400, 0.09, 0.14 * v); break;
       case 'loot':    this.tone('sine', 300 + Math.random() * 200, 700, 0.08, 0.1 * v); break;
       case 'chest':   this.noise(0.2, 0.3 * v, 1200, 200); [0, 0.08, 0.16, 0.24, 0.32].forEach((d, i) => this.tone('triangle', 523 * Math.pow(1.19, i), 523 * Math.pow(1.19, i), 0.15, 0.25 * v, d)); break;
       case 'legendary': [0, 0.06, 0.12].forEach((d, i) => this.tone('sine', 1047 * [1, 1.25, 1.5][i], 1047 * [1, 1.25, 1.5][i], 0.3, 0.12 * v, d)); break;

@@ -12,7 +12,7 @@ export class Hud {
       hpFill: $('hp-fill'), hpText: $('hp-text'),
       arFill: $('ar-fill'), arText: $('ar-text'),
       weapon: $('weapon-name'), ammo: $('ammo'), toolbar: $('toolbar'), prompt: $('prompt'),
-      floor: $('floor'), score: $('score'), gems: $('gems'),
+      floor: $('floor'), score: $('score'),
       boss: $('bossbar'), bossName: $('boss-name'), bossFill: $('boss-fill'),
       messages: $('messages'), powers: $('powers'),
       damage: $('damage'), flash: $('flash'), hit: $('hitmarker'),
@@ -24,16 +24,11 @@ export class Hud {
     this.dmgT = 0;
     this.flashT = 0;
     this.lastSlots = '';
-    this.gemT = 0;
   }
 
   // Context prompt shown for the current frame only (e.g. "Press E to swap").
   prompt(html) {
     this.promptHtml = html;
-  }
-
-  gemPop() {
-    this.gemT = 0.2;
   }
 
   message(text, color = '#fff', big = false) {
@@ -86,9 +81,6 @@ export class Hud {
 
     e.floor.textContent = `FLOOR ${g.floor}`;
     e.score.textContent = `SCORE ${g.score}  ·  KILLS ${g.kills}`;
-    e.gems.textContent = `◆ ${g.gems}`;
-    this.gemT = Math.max(0, this.gemT - dt);
-    e.gems.style.transform = `scale(${1 + this.gemT * 1.5})`;
     const cur = g.currentRoom;
     if (cur && cur.locked) {
       const alive = g.monsters.filter((m) => m.alive && m.room === cur).length;

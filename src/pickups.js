@@ -78,9 +78,8 @@ export class Pickup {
       if (!this.def) throw new Error(`Unknown pickup "${key}" (check config.js)`);
       this.model = buildPickupModel(this.def);
     }
-    this.isGem = this.def.type === 'gem';
     this.root.add(this.model);
-    this.baseY = opts.pedestal ? 1.35 : this.isGem ? 0.45 : 0.7;
+    this.baseY = opts.pedestal ? 1.35 : 0.7;
     if (this.label) this.label.position.y = this.baseY + 1.0;
 
     if (beamColor != null) {
@@ -112,7 +111,7 @@ export class Pickup {
 
     // Soft glow square on the floor
     const glow = new THREE.Mesh(
-      new THREE.PlaneGeometry(this.isGem ? 0.7 : 1.2, this.isGem ? 0.7 : 1.2),
+      new THREE.PlaneGeometry(1.2, 1.2),
       new THREE.MeshBasicMaterial({ color: this.def.color ?? 0xffffff, transparent: true, opacity: 0.25, depthWrite: false }),
     );
     glow.rotation.x = -Math.PI / 2;
@@ -170,15 +169,6 @@ export class Pickup {
       return;
     }
 
-    // Gems get pulled toward the player.
-    const mag = g.cfg.loot?.gemMagnetRadius ?? 0;
-    if (this.isGem && d2 < mag * mag && d2 > 0.01) {
-      const d = Math.sqrt(d2);
-      const sp = Math.min(d, (14 - d * 2) * dt);
-      this.pos.x += (dx / d) * sp;
-      this.pos.z += (dz / d) * sp;
-    }
-
     if (d2 < 1.4 * 1.4 && p.pos.y < 1.5 && this.tryCollect(p)) {
       this.alive = false;
       this.dispose();
@@ -204,12 +194,6 @@ export class Pickup {
         p.ammo[d.ammoType] = Math.min(max, p.ammo[d.ammoType] + d.amount);
         break;
       }
-      case 'gem':
-        g.gems += d.value ?? 10;
-        g.score += d.value ?? 10;
-        g.sfxThrottled('gem', 0.04);
-        g.hud.gemPop();
-        return true;
       case 'power':
         p.powers[d.effect] = { remaining: d.duration ?? 10, duration: d.duration ?? 10, def: d };
         g.sfx.play('power');
